@@ -6,28 +6,23 @@ export TMUX_DEFAULT_SESSIONNAME="main"
 export TMUX_DEFAULT_SOCKPATH="~/tmp//tmux-socket"
 export TMUX_DEFAULT_SUPPORT_COLOURS=256
 
-usage_exit() {
+
+__usage_exit() {
     cat << HELP
 t -- easy tmux wrapper.
 USAGE:
     * t session_name                                        # Find or create tmux-session, and attach this.
-    * t [-r|--rename] old_name new_name                     # Rename tmux-session.
     * t [-S|-s|--sock] socket_path                          # Find or create socket, And attach this session.
     * t [-l|--list] [session|window]                        # Show alive tmux sessions.
     * t [-k|--kill] session_name                            # Kill session. (default is current)
     * t [-f|--prefix] [key]                                 # Rebind tmux prefix-key.
-    * t [-b|--bind-key] [bind_name] [key]                   # Rebind to [key] tmux-bind name.
-    * t [-x|--close] [window|pane] [win_name or pane_index] # Close this tmux window or pane. (default is current)
-    * t [-w|--close-window] window_name                     # Close this tmux window. (default is current)
-    * t [-p|--close-pane] pane_index                        # Close this tmux pane (default is current)
     * t [-d|--detach]                                       # Detach current session.
-    * t [--mouse] [on|off]                                  # Mouse mode on/off.
-    * t [--raw] command                                     # Execute tmux command
+    * t [-m|--mouse]                                           # Mouse mode on/off toggle.
 HELP
     exit 1
 }
 
-__rebind() {
+__tmux_rebind_prefix() {
     local _new_key_="C-${1}"
     local _old_key_="C-$(tmux list-key | grep send-prefix | perl -p -e "s/.*C-([\\w]).*/\$1/")"
 
@@ -45,7 +40,7 @@ HELP
 }
 
 __tmux_attach() {
-    if [ -z ${TMUX} ];then
+    if [ ! -z ${TMUX} ];then
         echo 'sessions should be nested with care, unset $TMUX to force';
         return 1;
     fi
@@ -60,7 +55,7 @@ __tmux_attach() {
 }
 
 __tmux_sock() {
-    if [ -z ${TMUX} ];then
+    if [ ! -z ${TMUX} ];then
         echo 'sessions should be nested with care, unset $TMUX to force';
         return 1;
     fi
@@ -93,3 +88,63 @@ __tmux_mouse() {
 }
 
 
+optspec=":f:s:k:-:hld"
+while getopts "$optspec" optchar; do
+    case "${optchar}" in
+        -)
+            case "${OPTARG}" in
+                detach)
+                    \tmux detach-client; exit 1
+                    ;;
+                kill)
+                    val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    \tmux kill-session -t "${val}"; exit 1
+                    ;;
+                mouse)
+                    __tmux_mouse; exit 0
+                    ;;
+                prefix)
+                    val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    __tmux_rebind_prefix "${val}"; exit 0
+                    ;;
+                sock)
+                    val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    __tmux_sock "${val}"; exit 0
+                    ;;
+                list)
+                    \tmux ls; exit 0
+                    ;;
+                help)
+                    usage_exit; exit 1
+                    ;;
+                *)
+                    if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
+                        echo "Unknown option --${OPTARG}" >&2
+                    fi
+                    ;;
+            esac;;
+        h)
+            __usage_exit; exit 1
+            ;;
+        l)
+            \tmux ls; exit 0
+            ;;
+        k)
+            \tmux kill-session -t "${OPTARG}"; exit 1
+            ;;
+        s)
+            __tmux_sock "${OPTARG}"; exit 0
+            ;;
+        m)
+            __tmux_sock "${OPTARG}"; exit 0
+            ;;
+        *)
+            if [ "$OPTERR" != 1 ] || [ "${optspec:0:1}" = ":" ]; then
+                echo "Non-option argument: '-${OPTARG}'" >&2
+            fi
+            exit 1
+            ;;
+    esac
+done
+
+__tmux_attach
