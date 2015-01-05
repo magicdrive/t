@@ -71,7 +71,7 @@ __tmux_sock() {
 
 __tmux_mouse() {
 
-    [ "${TMUX_MOUSEMODE}" = '' ] && export TMUX_MOUSE="$(tmux show -g | grep mouse-resize-pane | perl -p -e 's/mouse-resize-pane //')";
+    [ "${TMUX_MOUSEMODE}" = '' ] && export TMUX_MOUSEMODE="$(tmux show -g | grep mouse-resize-pane | perl -p -e 's/mouse-resize-pane //')";
 
     if [ "${TMUX_MOUSEMODE}" == 'on' ];then
         local switch=off
@@ -83,12 +83,12 @@ __tmux_mouse() {
     tmux set-option -g mode-mouse ${switch}
     tmux set-option -g mouse-resize-pane ${switch}
     tmux set-option -g mouse-select-pane ${switch}
-    export TMUX_MOUSE=${switch}
+    export TMUX_MOUSEMODE=${switch}
 
 }
 
 
-optspec=":f:s:k:-:hld"
+optspec=":f:s:k:-:hldm"
 while getopts "$optspec" optchar; do
     case "${optchar}" in
         -)
