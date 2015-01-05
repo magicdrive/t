@@ -7,13 +7,13 @@ t -- easy tmux wrapper
 
 USAGE
 ----
-        * t session_name                 # Find or create tmux-session, and attach this.
-        * t [-S|-s|--sock] socket_path   # Find or create socket, And attach this session.
-        * t [-l|--list] [session|window] # Show alive tmux sessions.
-        * t [-k|--kill] session_name     # Kill session. (default is current)
-        * t [-f|--prefix] [key]          # Rebind tmux prefix-key.
-        * t [-d|--detach]                # Detach current session.
-        * t [-m|--mouse]                 # Mouse mode on/off toggle.
+    * t session_name                 # Find or create tmux-session, and attach this.
+    * t [-S|-s|--sock] socket_path   # Find or create socket, And attach this session.
+    * t [-l|--list] [session|window] # Show alive tmux sessions.
+    * t [-k|--kill] session_name     # Kill session. (default is current)
+    * t [-f|--prefix] [key]          # Rebind tmux prefix-key.
+    * t [-d|--detach]                # Detach current session.
+    * t [-m|--mouse]                 # Mouse mode on/off toggle.
 
 
 
