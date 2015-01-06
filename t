@@ -192,4 +192,4 @@ while getopts "$optspec" optchar; do
     esac
 done
 
-__tmux_attach
+__tmux_attach "$1"
