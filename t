@@ -90,7 +90,10 @@ __tmux_attach() {
         return 1;
     fi
     local session_name="${TMUX_DEFAULT_SESSIONNAME}";
-    [ $# -ne '0' ] && session_name="$1";
+    local session_name="$1";
+    if [ "${session_name}" = '' ];then
+        session_name="${TMUX_DEFAULT_SESSIONNAME}";
+    fi
     session_exists=$(tmux ls 2>&1 | cut -d ':' -f 1 | grep -e "^${session_name}$" | wc -l | perl -pe "s/\s//g")
     if [ "${session_exists}" = 0 ]; then
         tmux new-session -s "${session_name}"
@@ -174,6 +177,9 @@ while getopts "$optspec" optchar; do
         l)
             \tmux ls; exit 0
             ;;
+        d)
+            \tmux detach-client; exit 1
+            ;;
         k)
             \tmux kill-session -t "${OPTARG}"; exit 1
             ;;
@@ -181,7 +187,7 @@ while getopts "$optspec" optchar; do
             __tmux_sock "${OPTARG}"; exit 0
             ;;
         m)
-            __tmux_sock "${OPTARG}"; exit 0
+            __tmux_mouse; exit 0
             ;;
         *)
             if [ "$OPTERR" != 1 ] || [ "${optspec:0:1}" = ":" ]; then
