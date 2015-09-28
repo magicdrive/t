@@ -163,7 +163,7 @@ while getopts "$optspec" optchar; do
                     \tmux ls; exit 0
                     ;;
                 help)
-                    usage_exit; exit 1
+                    __usage_exit; exit 1
                     ;;
                 *)
                     if [ "$OPTERR" = 1 ] && [ "${optspec:0:1}" != ":" ]; then
