@@ -10,7 +10,7 @@
 #
 # USAGE
 # ----
-#     * t session_name                 # Find or create tmux-session, and attach this.
+#     * t session_name [TMUX_OPTIONS]       # Find or create tmux-session, and attach this.
 #     * t [-S|-s|--sock] socket_path   # Find or create socket, And attach this session.
 #     * t [-l|--list] [session|window] # Show alive tmux sessions.
 #     * t [-k|--kill] session_name     # Kill session. (default is current)
@@ -91,14 +91,15 @@ __tmux_attach() {
     fi
     local session_name="${TMUX_DEFAULT_SESSIONNAME}";
     local session_name="$1";
+    shift
     if [ "${session_name}" = '' ];then
         session_name="${TMUX_DEFAULT_SESSIONNAME}";
     fi
     session_exists=$(tmux ls 2>&1 | cut -d ':' -f 1 | grep -e "^${session_name}$" | wc -l | perl -pe "s/\s//g")
     if [ "${session_exists}" = 0 ]; then
-        tmux new-session -s "${session_name}"
+        tmux new-session -s "${session_name}" $@
     else
-        tmux attach -t "${session_name}"
+        tmux attach -t "${session_name}" $@
     fi
 }
 
@@ -198,4 +199,4 @@ while getopts "$optspec" optchar; do
     esac
 done
 
-__tmux_attach "$1"
+__tmux_attach $@
