@@ -89,11 +89,9 @@ __tmux_attach() {
         echo 'sessions should be nested with care, unset $TMUX to force';
         return 1;
     fi
-    local session_name="${TMUX_DEFAULT_SESSIONNAME}";
-    local session_name="$1";
-    shift
-    if [ "${session_name}" = '' ];then
-        session_name="${TMUX_DEFAULT_SESSIONNAME}";
+    local session_name="${1:-"${TMUX_DEFAULT_SESSIONNAME}"}";
+    if [ "$#" != 0 ];then
+        shift
     fi
     session_exists=$(tmux ls 2>&1 | cut -d ':' -f 1 | grep -e "^${session_name}$" | wc -l | perl -pe "s/\s//g")
     if [ "${session_exists}" = 0 ]; then
