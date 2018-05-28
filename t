@@ -20,7 +20,7 @@
 #
 # Author
 #
-# Copyright (c) 2015 Hiroshi IKEGAMI
+# Copyright (c) 2015 - 2018 Hiroshi IKEGAMI
 #
 # MIT License
 #
