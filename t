@@ -10,7 +10,8 @@
 #
 # USAGE
 # ----
-#     * t session_name [TMUX_OPTIONS]       # Find or create tmux-session, and attach this.
+#     * t session_name [TMUX_OPTIONS]  # Find or create tmux-session, and detach any other client then attach this.
+#     * t [-a|--attach] session_name   # Find or create tmux-session, and attach this.
 #     * t [-S|-s|--sock] socket_path   # Find or create socket, And attach this session.
 #     * t [-l|--list] [session|window] # Show alive tmux sessions.
 #     * t [-k|--kill] session_name     # Kill session. (default is current)
@@ -20,7 +21,7 @@
 #
 # Author
 #
-# Copyright (c) 2015 - 2018 Hiroshi IKEGAMI
+# Copyright (c) 2015 - 2020 Hiroshi IKEGAMI
 #
 # MIT License
 #
@@ -56,7 +57,8 @@ export TMUX_DEFAULT_SUPPORT_COLOURS=256
 __usage_exit() {
     cat << HELP
 USAGE:
-    * t session_name                 # Find or create tmux-session, and attach this.
+    * t session_name                 # Find or create tmux-session, and detach any other client then attach this.
+    * t [-a|--attach] session_name   # Find or create tmux-session, and attach this.
     * t [-S|-s|--sock] socket_path   # Find or create socket, And attach this session.
     * t [-l|--list] [session|window] # Show alive tmux sessions.
     * t [-k|--kill] session_name     # Kill session. (default is current)
@@ -84,6 +86,23 @@ HELP
     fi
 }
 
+__tmux_attach_simple() {
+    if [ ! -z ${TMUX} ];then
+        echo 'sessions should be nested with care, unset $TMUX to force';
+        return 1;
+    fi
+    local session_name="${1:-"${TMUX_DEFAULT_SESSIONNAME}"}";
+    if [ "$#" != 0 ];then
+        shift
+    fi
+    session_exists=$(tmux ls 2>&1 | cut -d ':' -f 1 | grep -e "^${session_name}$" | wc -l | perl -pe "s/\s//g")
+    if [ "${session_exists}" = 0 ]; then
+        tmux new-session -s "${session_name}"
+    else
+        tmux attach -t "${session_name}"
+    fi
+}
+
 __tmux_attach() {
     if [ ! -z ${TMUX} ];then
         echo 'sessions should be nested with care, unset $TMUX to force';
@@ -97,7 +116,7 @@ __tmux_attach() {
     if [ "${session_exists}" = 0 ]; then
         tmux new-session -s "${session_name}" $@
     else
-        tmux attach -t "${session_name}" $@
+        tmux attach -d -t "${session_name}" $@
     fi
 }
 
@@ -135,11 +154,15 @@ __tmux_mouse() {
 }
 
 
-optspec=":f:s:k:-:hldm"
+optspec=":a:f:s:k:-:hldm"
 while getopts "$optspec" optchar; do
     case "${optchar}" in
         -)
             case "${OPTARG}" in
+                attach)
+                    val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    __tmux_attach_simple "${val}"; exit 0
+                    ;;
                 detach)
                     \tmux detach-client; exit 1
                     ;;
@@ -175,6 +198,9 @@ while getopts "$optspec" optchar; do
             ;;
         l)
             \tmux ls; exit 0
+            ;;
+        a)
+            __tmux_attach_simple "${OPTARG}"; exit 0
             ;;
         d)
             \tmux detach-client; exit 1
