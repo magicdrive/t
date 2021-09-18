@@ -1,43 +1,83 @@
+.nh
 .TH t
 .SH NAME
 .PP
-t \-\- easy tmux wrapper
+t \- easy tmux wrapper
+
 .SH USAGE
 .PP
 .RS
+
 .nf
-* t session_name [TMUX_OPTIONS]  # Find or create tmux-session, and detach any other client then attach this.
-* t [-a|--attach] session_name   # Find or create tmux-session, and attach this.
-* t [\-S|\-s|\-\-sock] socket_path   # Find or create socket, And attach this session.
-* t [\-l|\-\-list] [session|window] # Show alive tmux sessions.
-* t [\-k|\-\-kill] session_name     # Kill session. (default is current)
-* t [\-f|\-\-prefix] [key]          # Rebind tmux prefix\-key.
-* t [\-d|\-\-detach]                # Detach current session.
-* t [\-m|\-\-mouse]                 # Mouse mode on/off toggle.
+ * t session\_name [TMUX\_OPTIONS]                # Find or create tmux\-session, and detach any other client then attach this.
+ *     [\-A|\-a|\-\-attach] session\_name            # Find or create tmux\-session, and attach this.
+ *     [\-\-ad|\-\-attach\-with\-detach] session\_name # Find or create tmux\-session, and attach this.
+ *     [\-S|\-s|\-\-sock] socket\_path               # Find or create socket, And attach this session.
+ *     [\-l|\-\-list] [session|window]             # Show alive tmux sessions.
+ *     [\-k|\-\-kill] session\_name                 # Kill session. (default is current)
+ *     [\-f|\-\-prefix] [key]                      # Rebind tmux prefix\-key.
+ *     [\-d|\-\-detach]                            # Detach current session.
+ *     [\-m|\-\-mouse]                             # Mouse mode on/off toggle.
+
 .fi
 .RE
+
+.SH ENVIRONMENTS
+.PP
+.RS
+
+.nf
+ T\_DEFAULT\_SESSIONNAME             # Default use session\_name (default: "main")
+ T\_DEFAULT\_SOCKPATH                # Default use socket\_path (default: "~/tmp//tmux\-socket")
+ T\_DEFAULT\_TMUX\_OPTION             # Default tmux cmd optoin (default: "")
+ T\_DEFAULT\_TMUX\_ATTACH\_WITH\_DETACH # Each other tty detach then attach session, when using `t` without specification. (default "on")
+
+.fi
+.RE
+
 .PP
 Author
+
 .PP
-Copyright (c) 2015 \- 2020 Hiroshi IKEGAMI
+Copyright (c) 2015 \- 2021 Hiroshi IKEGAMI
+
 .PP
 MIT License
+
 .PP
 Permission is hereby granted, free of charge, to any person obtaining
+.br
 a copy of this software and associated documentation files (the
+.br
 "Software"), to deal in the Software without restriction, including
+.br
 without limitation the rights to use, copy, modify, merge, publish,
+.br
 distribute, sublicense, and/or sell copies of the Software, and to
+.br
 permit persons to whom the Software is furnished to do so, subject to
+.br
 the following conditions:
+.br
+
 .PP
 The above copyright notice and this permission notice shall be
+.br
 included in all copies or substantial portions of the Software.
+.br
+
 .PP
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+.br
 EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+.br
 MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+.br
 NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+.br
 LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+.br
 OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+.br
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+.br
