@@ -3,7 +3,7 @@ t
 
 NAME
 ----
-t - Easy tmux wrapper
+t - Lazy tmux wrapper
 
 USAGE
 ----

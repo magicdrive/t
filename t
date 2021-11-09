@@ -1,7 +1,7 @@
 #! /bin/bash
 
 #
-# t - Easy tmux wrapper
+# t - Lazy tmux wrapper
 #
 # USAGE
 # ----
@@ -48,7 +48,7 @@ export LANG=C
 export T_DEFAULT_SESSIONNAME="${T_DEFAULT_SESSIONNAME:-"$(whoami)"}"
 export T_DEFAULT_SOCKPATH="${T_DEFAULT_SOCKPATH:-"~/tmp//tmux-socket"}"
 export T_DEFAULT_TMUX_OPTION="${T_DEFAULT_TMUX_OPTION:-""}"
-export T_DEFAULT_TMUX_ATTACH_WITH_DETACH="${T_DEFAULT_TMUX_OPTION:-"on"}"
+export T_DEFAULT_TMUX_ATTACH_WITH_DETACH="${T_DEFAULT_TMUX_ATTACH_WITH_DETACH:-"on"}"
 
 
 t::usage_exit() {
