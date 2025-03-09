@@ -31,7 +31,7 @@ ENVIRONMENTS
 
 Author
 
-Copyright (c) 2015 - 2021 Hiroshi IKEGAMI
+Copyright (c) 2015 - 2025 Hiroshi IKEGAMI
 
 MIT License
 
