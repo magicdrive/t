@@ -1,83 +1,97 @@
-.nh
-.TH "t" "1"
+.\" t(1) - Lazy tmux wrapper
+.TH t 1 "2025-07-02" "v1.1.0" "User Commands"
 .SH NAME
-.PP
-t \- Lazy tmux wrapper
+t \- A lazy, powerful tmux session wrapper
 
-.SH USAGE
+.SH SYNOPSIS
+.B t
+[\fIOPTIONS\fR] [\fIsession_name\fR] [\fITMUX_OPTIONS\fR]
+
+.SH DESCRIPTION
 .PP
+.B t
+is a minimal and beautiful wrapper for tmux session management.
+It allows you to create, attach, detach, and list tmux sessions with intuitive commands.
+
+.SH OPTIONS
+.TP
+.B -A, -a, --attach
+Attach to (or create) a session \fBwithout\fR detaching other clients. Takes an optional \fIsession_name\fR.
+.TP
+.B --ad, --attach-with-detach
+Attach to (or create) a session \fBand\fR detach other clients (default behavior). Takes an optional \fIsession_name\fR.
+.TP
+.B -S, -s, --sock \fISOCKET_PATH\fR
+Use a custom tmux socket file.
+.TP
+.B -l, --list [session|window]
+List all active tmux sessions or windows.
+.TP
+.B -k, --kill \fIsession_name\fR
+Kill the specified session (default: current).
+.TP
+.B -f, --prefix \fIkey\fR
+Rebind the tmux prefix-key (e.g. 'a', 'q').
+.TP
+.B -d, --detach
+Detach from the current session.
+.TP
+.B -m, --mouse
+Toggle mouse mode on or off.
+.TP
+.B -h, --help
+Show this help message and exit.
+
+.SH ENVIRONMENT VARIABLES
+.TP
+.B T_DEFAULT_SESSIONNAME
+Default session name. (default: \fImain\fR)
+.TP
+.B T_DEFAULT_SOCKPATH
+Default tmux socket path. (default: \fI~/tmp/tmux-socket\fR)
+.TP
+.B T_DEFAULT_TMUX_OPTION
+Default tmux command options.
+.TP
+.B T_DEFAULT_TMUX_ATTACH_WITH_DETACH
+Whether to detach other clients by default (default: "on").
+
+.SH EXAMPLES
+.PP
+Attach or create a session called "dev":
 .RS
-
-.nf
- * t session\_name [TMUX\_OPTIONS]                # Find or create tmux\-session, and detach any other client then attach this.
- *     [\-A|\-a|\-\-attach] session\_name            # Find or create tmux\-session, and attach this.
- *     [\-\-ad|\-\-attach\-with\-detach] session\_name # Find or create tmux\-session, and attach this.
- *     [\-S|\-s|\-\-sock] socket\_path               # Find or create socket, And attach this session.
- *     [\-l|\-\-list] [session|window]             # Show alive tmux sessions.
- *     [\-k|\-\-kill] session\_name                 # Kill session. (default is current)
- *     [\-f|\-\-prefix] [key]                      # Rebind tmux prefix\-key.
- *     [\-d|\-\-detach]                            # Detach current session.
- *     [\-m|\-\-mouse]                             # Mouse mode on/off toggle.
-
-.fi
+.B t dev
+.RE
+.PP
+Attach without detaching other clients:
+.RS
+.B t -a dev
+.RE
+.PP
+List all sessions:
+.RS
+.B t --list session
+.RE
+.PP
+Kill the "dev" session:
+.RS
+.B t --kill dev
+.RE
+.PP
+Rebind tmux prefix to 'a':
+.RS
+.B t --prefix a
 .RE
 
-.SH ENVIRONMENTS
-.PP
-.RS
+.SH SEE ALSO
+tmux(1)
 
-.nf
- T\_DEFAULT\_SESSIONNAME             # Default use session\_name (default: "main")
- T\_DEFAULT\_SOCKPATH                # Default use socket\_path (default: "~/tmp//tmux\-socket")
- T\_DEFAULT\_TMUX\_OPTION             # Default tmux cmd optoin (default: "")
- T\_DEFAULT\_TMUX\_ATTACH\_WITH\_DETACH # Each other tty detach then attach session, when using `t` without specification. (default "on")
+.SH AUTHOR
+Copyright (c) 2015–2025 Hiroshi IKEGAMI  
+Released under the MIT License.
 
-.fi
-.RE
+.SH OSS STYLE
+This software is open source, intended for hackers, creators, and anyone who loves fast and minimal workflow.  
+For more information, see: \fIhttps://github.com/magicdrive/t\fR
 
-.PP
-Author
 
-.PP
-Copyright (c) 2015 \- 2021 Hiroshi IKEGAMI
-
-.PP
-MIT License
-
-.PP
-Permission is hereby granted, free of charge, to any person obtaining
-.br
-a copy of this software and associated documentation files (the
-.br
-"Software"), to deal in the Software without restriction, including
-.br
-without limitation the rights to use, copy, modify, merge, publish,
-.br
-distribute, sublicense, and/or sell copies of the Software, and to
-.br
-permit persons to whom the Software is furnished to do so, subject to
-.br
-the following conditions:
-.br
-
-.PP
-The above copyright notice and this permission notice shall be
-.br
-included in all copies or substantial portions of the Software.
-.br
-
-.PP
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-.br
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-.br
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-.br
-NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
-.br
-LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
-.br
-OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-.br
-WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-.br
