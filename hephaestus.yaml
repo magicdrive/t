@@ -1,0 +1,69 @@
+# Release configuration for t, read by Hephaestus
+# (https://github.com/magicdrive/hephaestus). t is a Bash script: nothing is
+# compiled. The same files are packaged once per Homebrew platform, so the
+# formula can select an archive on macOS and Linux, Intel and ARM.
+# Releases are published by .github/workflows/release.yml on a v* tag push
+# (docs/releasing.md).
+version: 1
+
+project:
+  name: t
+  description: Lazy tmux wrapper
+  homepage: https://github.com/magicdrive/t
+  license: MIT
+
+archives:
+  - id: t
+    name: "{{ .Project }}_{{ .Version }}_{{ .OS }}_{{ .Arch }}"
+    format: tar.gz
+    targets:
+      - {os: darwin, arch: amd64}
+      - {os: darwin, arch: arm64}
+      - {os: linux, arch: amd64}
+      - {os: linux, arch: arm64}
+    # The repository layout, so `make install` works from an unpacked
+    # archive as it does from a clone.
+    files:
+      - {src: t, dst: t, mode: "0755"}
+      - {src: t.1, dst: t.1, mode: "0644"}
+      - {src: misc/completions/t-completion.sh, dst: misc/completions/t-completion.sh, mode: "0644"}
+      - {src: Makefile, dst: Makefile, mode: "0644"}
+      - {src: README.md, dst: README.md, mode: "0644"}
+      - {src: LICENSE, dst: LICENSE, mode: "0644"}
+
+checksum:
+  name: "{{ .Project }}_checksums.txt"
+
+release:
+  github:
+    owner: magicdrive
+    name: t
+    generate_notes: true
+
+brews:
+  - name: t
+    ids: [t]
+    commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    # magicdrive/homebrew-tap keeps its formulae at the repository root.
+    # Prereleases (v1.2.0-rc.1) never update the tap.
+    skip_upload: auto
+    dependencies:
+      - tmux
+    install: |
+      bin.install "t"
+      man1.install "t.1"
+      # One completion script serves bash and zsh: keep it in pkgshare and
+      # link it into bash's completion directory under the command's name.
+      pkgshare.install "misc/completions/t-completion.sh"
+      bash_completion.install_symlink pkgshare/"t-completion.sh" => "t"
+    caveats: |
+      Bash completion is installed. For zsh, add this to ~/.zshrc after compinit:
+        source "$(brew --prefix)/share/t/t-completion.sh"
+    test: |
+      assert_match "USAGE", shell_output("#{bin}/t --help 2>&1", 1)
+      assert_path_exists man1/"t.1"
+    repository:
+      owner: magicdrive
+      name: homebrew-tap
+      pull_request:
+        enabled: true

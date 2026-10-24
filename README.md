@@ -19,6 +19,18 @@ USAGE
  *     [-m|--mouse]                             # Mouse mode on/off toggle.
 ```
 
+INSTALL
+---
+```
+ brew install magicdrive/tap/t       # Homebrew (macOS, Linux), from the first release made with Hephaestus
+ make install PREFIX=~/local         # from a clone or an unpacked release archive
+```
+
+Completion: bash completion is installed by Homebrew. For zsh (or bash without Homebrew), source
+`misc/completions/t-completion.sh` (with Homebrew: `$(brew --prefix)/share/t/t-completion.sh`) in your shell rc file.
+
+Releases: [docs/releasing.md](docs/releasing.md).
+
 ENVIRONMENTS
 ---
 ```

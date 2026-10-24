@@ -2,7 +2,7 @@ PREFIX=${HOME}/local
 CURRENTDIR=$(shell pwd -L | perl -p -e 's/ /\\ /g')
 
 all:
-	@echo "make [intall|uninstall]"
+	@echo "make [install|uninstall|lint|test|snapshot|check-version TAG=vX.Y.Z]"
 
 man:
 	[ -e $(shell which md2man-roff) ] && md2man-roff $(CURRENTDIR)/README.md > $(CURRENTDIR)/t.1
@@ -16,3 +16,25 @@ uninstall:
 	rm -f $(PREFIX)/bin/t
 	rm -f  $(PREFIX)/share/man/man1/t.1
 
+
+# Static checks: bash -n, zsh -n, ShellCheck, man page (scripts/lint.sh)
+lint:
+	scripts/lint.sh
+
+# Behavior checks: help, completion, tmux sessions (scripts/smoke.sh)
+test:
+	scripts/smoke.sh
+
+# Release archives into dist/ without a tag, with Hephaestus
+# (https://github.com/magicdrive/hephaestus); releases are published by
+# .github/workflows/release.yml on a tag push (docs/releasing.md).
+HEPHAESTUS ?= hephaestus
+snapshot:
+	$(HEPHAESTUS) run --snapshot --fresh --stages archive,checksum
+	scripts/verify-dist.sh dist 0.0.0-SNAPSHOT
+
+# Check a release tag against the man page before tagging: make check-version TAG=v1.2.0
+check-version:
+	scripts/check-version.sh $(TAG)
+
+.PHONY: all man install uninstall lint test snapshot check-version

@@ -1,0 +1,108 @@
+name: Release
+
+# Publishes a release on a v* tag push (docs/releasing.md): the full CI at
+# the tagged commit, a read-only build job, then a publish job in the
+# "release" environment that only uploads what the build job verified.
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  build:
+    # No token that can write, no secrets: packages and verifies dist/.
+    needs: [ci]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the tag and the man page version
+        run: scripts/check-version.sh "$GITHUB_REF_NAME"
+      - name: Archive and checksum
+        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0-rc.2
+        with:
+          command: run
+          stages: archive,checksum
+          fresh: "true"
+          github-token: ""
+      - name: Verify dist
+        run: scripts/verify-dist.sh dist "${GITHUB_REF_NAME#v}"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    # Publishes the verified dist/ from the build job; runs no build.
+    needs: [ci, build]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write     # create the release and upload assets
+      id-token: write     # sign provenance attestations
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: dist
+          path: dist
+      - name: Verify dist again before publishing anything
+        run: scripts/verify-dist.sh dist "${GITHUB_REF_NAME#v}"
+      # Prereleases (v1.2.0-rc.1) never update the tap (skip_upload: auto),
+      # so the tap token reaches only stable releases' tap steps.
+      - name: Check the tap token
+        if: ${{ !contains(github.ref_name, '-') }}
+        env:
+          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+        run: |
+          # Without a token a dry run cannot read the tap and would pass.
+          [[ -n "$HOMEBREW_TAP_GITHUB_TOKEN" ]] || { echo "::error::HOMEBREW_TAP_GITHUB_TOKEN is not set in the release environment"; exit 1; }
+      - name: Rehearse the formula and tap pull request (read-only)
+        # Checks the token, the tap's formula directory and the pull request
+        # branch before the release becomes public.
+        if: ${{ !contains(github.ref_name, '-') }}
+        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0-rc.2
+        with:
+          command: run
+          stages: formula,tap
+          dry-run: "true"
+          github-token: ""
+          tap-token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: |
+            dist/t_*.tar.gz
+            dist/t_checksums.txt
+      - name: Publish the GitHub release
+        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0-rc.2
+        with:
+          command: release
+      - name: Generate the formula and open a tap pull request
+        if: ${{ !contains(github.ref_name, '-') }}
+        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0-rc.2
+        with:
+          command: run
+          stages: formula,tap
+          github-token: ""
+          tap-token: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
