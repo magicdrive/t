@@ -56,7 +56,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0-rc.2
+      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
         with:
           command: run
           stages: archive,checksum
@@ -80,7 +80,7 @@ jobs:
       - name: Put Homebrew on PATH (Linux)
         if: runner.os == 'Linux'
         run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
-      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0-rc.2
+      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
         with:
           command: run
           stages: archive,checksum,formula
