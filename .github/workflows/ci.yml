@@ -1,0 +1,103 @@
+name: CI
+
+# Runs on pull requests and on master, and is called by release.yml at the
+# tagged commit before anything is published.
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    # bash -n / zsh -n, ShellCheck (errors gate; see scripts/lint.sh) and
+    # the man page.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install zsh and mandoc
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends zsh mandoc
+      - run: make lint
+
+  smoke:
+    # Help, bash and zsh completion, and sessions on a private tmux server.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install tmux and zsh (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends tmux zsh
+      - name: Install tmux (macOS)
+        if: runner.os == 'macOS'
+        run: command -v tmux || brew install tmux
+      - run: make test
+
+  package:
+    # The release archives, as release.yml builds them, without a tag.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+        with:
+          command: run
+          stages: archive,checksum
+          snapshot: "true"
+          fresh: "true"
+          github-token: ""
+      - run: scripts/verify-dist.sh dist 0.0.0-SNAPSHOT
+
+  homebrew:
+    # The generated formula, installed from the local archives with the real
+    # Homebrew: style, audit --strict, install, test, uninstall.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Put Homebrew on PATH (Linux)
+        if: runner.os == 'Linux'
+        run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+        with:
+          command: run
+          stages: archive,checksum,formula
+          tag: v0.0.0
+          fresh: "true"
+          github-token: ""
+      - run: scripts/homebrew-test.sh dist 0.0.0
+
+  ci-gate:
+    # The single check to require on master, and what release.yml waits for.
+    if: always()
+    needs: [lint, smoke, package, homebrew]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every job succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "$RESULTS"
+          for r in $RESULTS; do [[ "$r" == success ]] || exit 1; done
