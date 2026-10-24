@@ -22,7 +22,7 @@ USAGE
 INSTALL
 ---
 ```
- brew install magicdrive/tap/t       # Homebrew (macOS, Linux), from the first release made with Hephaestus
+ brew install magicdrive/tap/t       # Homebrew (macOS, Linux), v1.2.0 or later
  make install PREFIX=~/local         # from a clone or an unpacked release archive
 ```
 
@@ -34,7 +34,7 @@ Releases: [docs/releasing.md](docs/releasing.md).
 ENVIRONMENTS
 ---
 ```
- T_DEFAULT_SESSIONNAME             # Default use session_name (default: "main")
+ T_DEFAULT_SESSIONNAME             # Default use session_name (default: your user name, `whoami`)
  T_DEFAULT_SOCKPATH                # Default use socket_path (default: "~/tmp//tmux-socket")
  T_DEFAULT_TMUX_OPTION             # Default tmux cmd optoin (default: "")
  T_DEFAULT_TMUX_ATTACH_WITH_DETACH # Each other tty detach then attach session, when using `t` without specification. (default "on")
