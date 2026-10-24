@@ -35,6 +35,8 @@ jobs:
       - name: brew install magicdrive/tap/t
         run: |
           brew update --quiet
+          # brew install taps magicdrive/tap on its own; brew info does not.
+          brew tap magicdrive/tap
           brew info magicdrive/tap/t
           brew install magicdrive/tap/t
       - name: brew test
