@@ -1,0 +1,70 @@
+name: Homebrew tap install
+
+# Installs t from the published tap exactly as users do
+# (brew install magicdrive/tap/t) on macOS and Linux and checks what it
+# installs. Read-only: it only downloads the formula and the release
+# archive. Run it after a tap pull request is merged (workflow_dispatch)
+# and weekly, to notice a broken formula or release download.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * 1"
+  pull_request:
+    paths:
+      - .github/workflows/tap-install.yml
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      HOMEBREW_NO_ANALYTICS: "1"
+      HOMEBREW_NO_ENV_HINTS: "1"
+      HOMEBREW_NO_INSTALL_CLEANUP: "1"
+    steps:
+      - name: Put Homebrew on PATH (Linux)
+        if: runner.os == 'Linux'
+        run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
+      - name: brew install magicdrive/tap/t
+        run: |
+          brew update --quiet
+          brew info magicdrive/tap/t
+          brew install magicdrive/tap/t
+      - name: brew test
+        run: brew test magicdrive/tap/t
+      - name: Installed files
+        run: |
+          set -euo pipefail
+          p="$(brew --prefix)"
+          echo "uname: $(uname -sm)"
+          brew list --versions t
+          test -x "$p/bin/t"
+          test -f "$p/share/man/man1/t.1"
+          test -e "$p/etc/bash_completion.d/t"
+          test -f "$p/share/t/t-completion.sh"
+          # t --help prints the usage and exits 1 by design.
+          set +e; out="$("$p/bin/t" --help 2>&1)"; code=$?; set -e
+          echo "t --help exit $code"
+          [[ $code -eq 1 ]] && grep -q '^USAGE:' <<<"$out"
+          bash -c "source '$p/etc/bash_completion.d/t' && complete -p t" | grep -q _t_complete
+          # The installed files are the released ones.
+          version="$(brew list --versions t | awk '{print $2}')"
+          gh release download "v$version" --repo magicdrive/t --pattern "t_${version}_linux_amd64.tar.gz" --dir "$RUNNER_TEMP/rel"
+          tar -xzf "$RUNNER_TEMP/rel/t_${version}_linux_amd64.tar.gz" -C "$RUNNER_TEMP/rel"
+          cmp "$p/bin/t" "$RUNNER_TEMP/rel/t"
+          cmp "$p/share/man/man1/t.1" "$RUNNER_TEMP/rel/t.1"
+          cmp "$p/share/t/t-completion.sh" "$RUNNER_TEMP/rel/misc/completions/t-completion.sh"
+          echo "installed files match the v$version release"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: brew uninstall
+        run: |
+          brew uninstall magicdrive/tap/t
+          test ! -e "$(brew --prefix)/bin/t"
