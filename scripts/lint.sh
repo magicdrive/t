@@ -26,9 +26,14 @@ run shellcheck --shell=bash --severity=error --exclude=SC2068 t
 run shellcheck --shell=bash --severity=error --exclude=SC2296 misc/completions/t-completion.sh
 shellcheck --shell=bash --severity=warning t misc/completions/t-completion.sh || echo "(warnings above are not gating)"
 
-for f in scripts/*.sh; do
-  run shellcheck --shell=bash "$f"
+for f in scripts/*.sh scripts/lib/*.sh; do
+  run shellcheck --shell=bash --external-sources "$f"
 done
+if command -v actionlint >/dev/null; then
+  run actionlint .github/workflows/*.yml
+else
+  echo "actionlint not installed: skipping workflow lint"
+fi
 
 if command -v mandoc >/dev/null; then
   run mandoc -T lint -W error t.1

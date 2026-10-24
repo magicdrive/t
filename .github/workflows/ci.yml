@@ -28,7 +28,20 @@ jobs:
           persist-credentials: false
       - name: Install zsh and mandoc
         run: sudo apt-get update -qq && sudo apt-get install -y -qq --no-install-recommends zsh mandoc
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: stable
+          cache: false
+      - name: Install actionlint
+        run: |
+          go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
       - run: make lint
+      - name: Release rules and workflow boundaries
+        # Version and tag rules, environment and ruleset evaluation used by
+        # the release preflight, and the release workflow's security
+        # structure (scripts/check-workflows.rb).
+        run: make test-release
 
   smoke:
     # Help, bash and zsh completion, and sessions on a private tmux server.
