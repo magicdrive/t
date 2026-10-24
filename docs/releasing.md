@@ -27,23 +27,71 @@ prereleases and never touch the tap; the tap token is not passed to them.
 
 | Item | Value |
 | --- | --- |
-| Environment `release` | Deployment restricted to **tags** `v*` (a tag policy, not a branch policy) |
+| Environment `release` | Deployment restricted to **tags** `v*` only: a tag policy, no branch policy |
 | Secret in `release` | `HOMEBREW_TAP_GITHUB_TOKEN`: fine-grained token (or GitHub App token) with contents and pull-requests write on `magicdrive/homebrew-tap` only |
-| Workflow permissions | Settings → Actions → General: "Read repository contents" (the workflows request what they need) |
-| Rulesets (recommended) | `master`: require the `ci-gate` check, no force pushes or deletion; tags `v*`: no update or deletion |
+| Workflow permissions | Settings → Actions → General: "Read repository contents and packages permissions"; "Allow GitHub Actions to create and approve pull requests" off (the tap pull request is opened with the tap token, not `GITHUB_TOKEN`) |
+| Ruleset on `master` | Active: pull request required, `ci-gate` required, no force pushes, no deletion — [settings/ruleset-protect-master.json](settings/ruleset-protect-master.json) |
+| Ruleset on tags `v*` | Active: no update, no deletion; creation allowed — [settings/ruleset-protect-release-tags.json](settings/ruleset-protect-release-tags.json) |
+
+`make release-preflight TAG=...` checks every row it can read (secret names
+only, never values).
+
+Changing the environment policy in the UI: Settings → Environments →
+`release` → Deployment branches and tags: remove the branch rule `v*`, add a
+rule of type **Tag** with pattern `v*`. With the API:
+
+```sh
+gh api repos/magicdrive/t/environments/release/deployment-branch-policies --jq '.branch_policies[] | [.id, .name, .type]'
+gh api --method DELETE repos/magicdrive/t/environments/release/deployment-branch-policies/<id of the branch v* policy>
+gh api --method POST repos/magicdrive/t/environments/release/deployment-branch-policies -f name='v*' -f type=tag
+```
+
+Rulesets with the API:
+
+```sh
+gh api --method POST repos/magicdrive/t/rulesets --input docs/settings/ruleset-protect-master.json
+gh api --method POST repos/magicdrive/t/rulesets --input docs/settings/ruleset-protect-release-tags.json
+```
+
+## Versions
+
+Tags are `vMAJOR.MINOR.PATCH[-PRERELEASE]` (SemVer 2.0.0, no build metadata,
+no leading zeros), each newer than the latest released `vX.Y.Z`. The man
+page carries the release version **without** the pre-release part: `t.1`
+says `v1.2.0` for `v1.2.0-rc.1`, `v1.2.0-rc.2` and `v1.2.0`. A release
+candidate's commit can therefore become the stable release unchanged, and a
+stable tag never ships a man page naming another version. The build job
+enforces it (`scripts/check-version.sh`; `make check-version TAG=...`).
 
 ## Cutting a release
 
-1. Update the version in `t.1` (`.TH t 1 "<date>" "vX.Y.Z"`) and merge it.
-   The release checks it: `make check-version TAG=vX.Y.Z`.
-2. On an up-to-date, clean `master` whose CI is green:
+1. Set the version in `t.1` (`.TH t 1 "YYYY-MM-DD" "vX.Y.Z" ...`) and merge
+   it.
+2. On an up-to-date, clean `master` whose CI is green, run the read-only
+   preflight:
 
    ```sh
-   git tag -a v1.2.0 -m "v1.2.0"
-   git push origin refs/tags/v1.2.0
+   make release-preflight TAG=v1.2.0-rc.1
    ```
 
-3. `.github/workflows/release.yml` runs:
+   It checks: tag format and man page version; on `master`, clean worktree,
+   `HEAD` = `origin/master`; the tag exists neither locally nor on `origin`
+   and is newer than the latest release; `ci.yml` succeeded on exactly this
+   commit; `release.yml` is active; environment `release` deploys only from
+   matching tags; active rulesets protect `v*` tags (no update or deletion,
+   creation allowed) and require `ci-gate` on `master`; no release or draft
+   exists for the tag; for a stable tag also the tap token secret (by name),
+   the tap's layout and that no `t-X.Y.Z` branch or pull request exists yet.
+   The Hephaestus configuration itself is exercised by CI on the commit.
+3. Tag and push (the only release trigger; a pushed tag is never moved or
+   deleted):
+
+   ```sh
+   git tag -a v1.2.0-rc.1 -m "v1.2.0-rc.1"
+   git push origin refs/tags/v1.2.0-rc.1
+   ```
+
+4. `.github/workflows/release.yml` runs:
    1. **ci** — the complete CI at the tagged commit (`ci-gate`);
    2. **build** (read-only, no secrets) — tag and man page version check,
       `archive,checksum` with Hephaestus, `scripts/verify-dist.sh`, upload
@@ -53,11 +101,12 @@ prereleases and never touch the tap; the tap token is not passed to them.
       token; provenance attestation; the GitHub release (draft, upload and
       verify every asset, then publish, with generated notes); for a stable
       tag, the formula and the tap pull request.
-4. Review and merge the tap pull request.
+5. For a stable tag, review and merge the tap pull request.
 
 A failed run can be re-run: the release stays a draft until every asset is
 uploaded and verified, and every step skips what is already in place. Do not
-move or delete a pushed tag; release the next version instead.
+move or delete a pushed tag; release the next version (e.g. `-rc.2`)
+instead.
 
 ## Verifying a release
 
@@ -78,6 +127,8 @@ make lint                                  # bash -n, zsh -n, ShellCheck, man pa
 make test                                  # help, completion, tmux sessions
 make snapshot HEPHAESTUS=/path/to/hephaestus   # archives into dist/
 make check-version TAG=v1.2.0
+make release-preflight TAG=v1.2.0-rc.1      # read-only; needs gh and jq
+make test-release                          # release rules and workflow structure
 ```
 
 CI (`.github/workflows/ci.yml`) also installs the generated formula from

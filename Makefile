@@ -2,7 +2,7 @@ PREFIX=${HOME}/local
 CURRENTDIR=$(shell pwd -L | perl -p -e 's/ /\\ /g')
 
 all:
-	@echo "make [install|uninstall|lint|test|snapshot|check-version TAG=vX.Y.Z]"
+	@echo "make [install|uninstall|lint|test|test-release|snapshot|check-version TAG=vX.Y.Z|release-preflight TAG=vX.Y.Z]"
 
 man:
 	[ -e $(shell which md2man-roff) ] && md2man-roff $(CURRENTDIR)/README.md > $(CURRENTDIR)/t.1
@@ -37,4 +37,14 @@ snapshot:
 check-version:
 	scripts/check-version.sh $(TAG)
 
-.PHONY: all man install uninstall lint test snapshot check-version
+# Read-only checks before pushing a release tag (git, CI, environment,
+# rulesets, man page, tap): make release-preflight TAG=v1.2.0-rc.1
+release-preflight:
+	scripts/release-preflight.sh $(TAG)
+
+# Tests of the release rules and of the release workflow's structure
+test-release:
+	scripts/test-release-rules.sh
+	ruby scripts/check-workflows.rb
+
+.PHONY: all man install uninstall lint test snapshot check-version release-preflight test-release
