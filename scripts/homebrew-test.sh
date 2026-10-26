@@ -10,9 +10,16 @@ tap="t-ci/t$RANDOM$RANDOM"
 
 export HOMEBREW_NO_AUTO_UPDATE=1 HOMEBREW_NO_INSTALL_CLEANUP=1 HOMEBREW_NO_ANALYTICS=1 \
   HOMEBREW_NO_ENV_HINTS=1 HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
+# Homebrew 7.0.11 and later load a formula of a tap that is not official only
+# once it is trusted (brew trust): `brew install magicdrive/tap/t` trusts the
+# formula it installs, but brew audit refuses an untrusted one. The
+# throw-away tap holds the formula under test; it is trusted while it exists
+# (when this Homebrew, after its update below, has brew trust).
+trusts=false
 cleanup() {
   set +e
   brew uninstall --force "$tap/t" >/dev/null 2>&1
+  [[ "$trusts" == true ]] && brew untrust --tap "$tap" >/dev/null 2>&1
   brew untap --force "$tap" >/dev/null 2>&1
 }
 trap cleanup EXIT
@@ -20,8 +27,10 @@ trap cleanup EXIT
 # One explicit update: dependencies (tmux) are poured from bottles described
 # by the current formula API, which an outdated Homebrew may not read.
 brew update --quiet
+brew trust --help >/dev/null 2>&1 && trusts=true
 
 brew tap-new --no-git "$tap" >/dev/null
+if [[ "$trusts" == true ]]; then brew trust --tap "$tap"; fi
 tapdir="$(brew --repository "$tap")"
 formula="$tapdir/Formula/t.rb"
 # The formula downloads from the release; point it at the local archives.
