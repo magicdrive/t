@@ -35,7 +35,7 @@ jobs:
       - name: Check the tag and the man page version
         run: scripts/check-version.sh "$GITHUB_REF_NAME"
       - name: Archive and checksum
-        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
+        uses: magicdrive/hephaestus@e544acf59c79cbafa04a48002b0f30f91a02f8ba # v1.3.0
         with:
           command: run
           stages: archive,checksum
@@ -76,7 +76,7 @@ jobs:
       # reaches only the steps that run when it is "publish".
       - name: Plan the release
         id: plan
-        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
+        uses: magicdrive/hephaestus@e544acf59c79cbafa04a48002b0f30f91a02f8ba # v1.3.0
         with:
           command: plan
       - name: Check the tap token
@@ -91,7 +91,7 @@ jobs:
         # Checks the token, the tap's formula directory and the pull request
         # branch before the release becomes public.
         if: steps.plan.outputs.tap == 'publish'
-        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
+        uses: magicdrive/hephaestus@e544acf59c79cbafa04a48002b0f30f91a02f8ba # v1.3.0
         with:
           command: run
           stages: formula,tap
@@ -105,12 +105,12 @@ jobs:
             dist/t_*.tar.gz
             dist/t_checksums.txt
       - name: Publish the GitHub release
-        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
+        uses: magicdrive/hephaestus@e544acf59c79cbafa04a48002b0f30f91a02f8ba # v1.3.0
         with:
           command: release
       - name: Generate the formula and open a tap pull request
         if: steps.plan.outputs.tap == 'publish'
-        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
+        uses: magicdrive/hephaestus@e544acf59c79cbafa04a48002b0f30f91a02f8ba # v1.3.0
         with:
           command: run
           stages: formula,tap

@@ -32,6 +32,19 @@ heph = [ci, rel].flat_map { |w| w["jobs"].values.flat_map { |j| (j["steps"] || [
              .select { |u| u.start_with?("magicdrive/hephaestus@") }.uniq
 heph.size == 1 ? ok("one Hephaestus commit: #{heph.first}") : fail!("Hephaestus actions at different commits: #{heph.join(", ")}")
 
+# make publish runs the same Hephaestus release as the action: the version
+# comment of every action pin is the Makefile's HEPHAESTUS_VERSION.
+make_version = File.read("Makefile")[/^HEPHAESTUS_VERSION \?= (\S+)$/, 1]
+lines = [".github/workflows/ci.yml", ".github/workflows/release.yml"].flat_map { |p| File.read(p).lines.grep(/uses: magicdrive\/hephaestus@/) }
+comments = lines.map { |l| l[/uses: magicdrive\/hephaestus@[0-9a-f]{40} # (v\S+)\s*\z/, 1] }
+if make_version.nil?
+  fail!("Makefile: no HEPHAESTUS_VERSION ?= vX.Y.Z")
+elsif comments.empty? || comments.any? { |c| c != make_version }
+  fail!("the Hephaestus action pins say #{comments.uniq.map(&:inspect).join(", ")}, the Makefile's HEPHAESTUS_VERSION is #{make_version}")
+else
+  ok("make publish and the action run Hephaestus #{make_version}")
+end
+
 # A job without timeout-minutes may hang for six hours (a reusable workflow
 # call cannot have one; its jobs do).
 [[".github/workflows/ci.yml", ci], [".github/workflows/release.yml", rel], [".github/workflows/tap-install.yml", load(".github/workflows/tap-install.yml")]].each do |path, w|
