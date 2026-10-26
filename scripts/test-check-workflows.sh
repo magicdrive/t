@@ -21,6 +21,7 @@ mutate() {
   mkdir -p "$dir/.github" "$dir/scripts"
   cp -R .github/workflows "$dir/.github/"
   cp scripts/check-workflows.rb "$dir/scripts/"
+  cp Makefile "$dir/"
   if ! ruby -e 'p = ARGV[0]; s = File.read(p); t = eval(ARGV[1]); abort("does not apply") if t == s; File.write(p, t)' "$dir/$file" "$expr"; then
     echo "FAIL mutation '$name' no longer applies to $file"; failed=1; return
   fi
@@ -51,9 +52,11 @@ mutate "plan step made conditional" "$rel" 's.sub("        id: plan\n", "       
 mutate "tap step renamed" "$rel" \
   's.sub("- name: Generate the formula and open a tap pull request", "- name: Generate the formula and open the tap pull request")'
 mutate "CI on another Hephaestus" "$ci" \
-  's.sub("magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c", "magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff")'
+  's.sub("magicdrive/hephaestus@e544acf59c79cbafa04a48002b0f30f91a02f8ba", "magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c")'
 mutate "Hephaestus pinned to a tag" "$rel" \
-  's.sub("magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c", "magicdrive/hephaestus@v1.2.0")'
+  's.sub("magicdrive/hephaestus@e544acf59c79cbafa04a48002b0f30f91a02f8ba", "magicdrive/hephaestus@v1.3.0")'
+mutate "make publish on another Hephaestus" Makefile 's.sub(/^HEPHAESTUS_VERSION \?= v.*$/, "HEPHAESTUS_VERSION ?= v1.1.0")'
+mutate "an action pin's version comment differs" "$ci" 's.sub(/(uses: magicdrive\/hephaestus@\h{40}) # v\S+/, "\\1 # v1.1.0")'
 mutate "a release job without a timeout" "$rel" 's.sub(/\n    timeout-minutes: 30\n/, "\n")'
 mutate "a CI job without a timeout" "$ci" 's.sub(/\n    timeout-minutes: 15\n/, "\n")'
 mutate "the build job gets a secret" "$rel" \

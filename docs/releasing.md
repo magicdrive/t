@@ -69,23 +69,44 @@ enforces it (`scripts/check-version.sh`; `make check-version TAG=...`).
 1. Set the version in `t.1` (`.TH t 1 "YYYY-MM-DD" "vX.Y.Z" ...`) and merge
    it.
 2. On an up-to-date, clean `master` whose CI is green, run the read-only
-   preflight:
+   checks:
 
    ```sh
-   make release-preflight TAG=v1.2.0-rc.1
+   make publish-check v1.2.0-rc.1
    ```
 
-   It checks: tag format and man page version; on `master`, clean worktree,
-   `HEAD` = `origin/master`; the tag exists neither locally nor on `origin`
-   and is newer than the latest release; `ci.yml` succeeded on exactly this
-   commit; `release.yml` is active; environment `release` deploys only from
-   matching tags; active rulesets protect `v*` tags (no update or deletion,
-   creation allowed) and require `ci-gate` on `master`; no release or draft
-   exists for the tag; for a stable tag also the tap token secret (by name),
-   the tap's layout and that no `t-X.Y.Z` branch or pull request exists yet.
-   The Hephaestus configuration itself is exercised by CI on the commit.
+   It runs the man page check (`scripts/check-version.sh`), then the
+   preflight of [`hephaestus publish`](https://github.com/magicdrive/hephaestus/blob/v1.3.0/docs/publish.md)
+   (`make` runs the pinned `go run github.com/magicdrive/hephaestus@$(HEPHAESTUS_VERSION)`;
+   Go is needed, `HEPHAESTUS=hephaestus` uses an installed one). The release
+   branch is the repository's default branch on GitHub, `master`
+   (`hephaestus.yaml` sets no `preflight.branch`); the preflight prints it as
+   `default branch` and `release branch`. It checks: on `master`, clean
+   worktree, `HEAD` = `origin/master` = `master` on GitHub; the tag exists
+   neither locally nor on `origin`; `ci.yml` succeeded on exactly this commit
+   on `master`; `release.yml` is active; environment `release` deploys only
+   from matching tags; active rulesets protect `v*` tags (no update or
+   deletion, creation allowed) and require `ci-gate` on `master`; no release
+   or draft exists for the tag; for a stable tag also the tap token secret
+   (by name), the tap's layout and that no `t-X.Y.Z` branch or pull request
+   exists yet; and `hephaestus preflight --strict`.
+   `make release-preflight TAG=v1.2.0-rc.1` runs this repository's own,
+   equivalent checks, and also that the tag is newer than the latest
+   release.
 3. Tag and push (the only release trigger; a pushed tag is never moved or
    deleted):
+
+   ```sh
+   make publish v1.2.0-rc.1        # YES=1 confirms without the prompt
+   ```
+
+   It repeats the man page check and the preflight, asks, creates an
+   annotated tag at the checked commit, checks `master` (on `origin` and on
+   GitHub) and the remote tag again, pushes exactly that tag (never forced),
+   then follows the release run below and verifies what it published. If
+   monitoring stops, `make publish-watch v1.2.0-rc.1` resumes and
+   `make publish-status v1.2.0-rc.1` shows where it stands. By hand, the same
+   tag push is:
 
    ```sh
    git tag -a v1.2.0-rc.1 -m "v1.2.0-rc.1"
@@ -114,7 +135,8 @@ instead.
 
 ## Verifying a release
 
-`make release-status TAG=v1.2.1` (`hephaestus publish status`, read-only)
+`make publish-status v1.2.1` (or `make release-status TAG=v1.2.1`; both run
+`hephaestus publish status`, read-only)
 checks the published release: the release run, the assets, the checksums,
 every attestation, the tap steps and the formula pull request. By hand:
 
@@ -133,12 +155,17 @@ done
 ```sh
 make lint                                  # bash -n, zsh -n, ShellCheck, man page
 make test                                  # help, completion, tmux sessions
-make snapshot HEPHAESTUS=/path/to/hephaestus   # archives into dist/
+make snapshot                              # archives into dist/ (the pinned Hephaestus; needs Go)
 make check-version TAG=v1.2.0
+make publish-check v1.2.0-rc.1             # read-only: man page check + publish preflight
+make publish v1.2.0-rc.1                   # the release (tag push), then follow and verify
+make publish-status v1.2.1                 # read-only; a published release
 make release-preflight TAG=v1.2.0-rc.1      # read-only; needs gh and jq
-make release-status TAG=v1.2.1             # read-only; a published release
-make test-release                          # release rules and workflow structure
+make test-release                          # release rules, workflow structure, make publish wiring
 ```
+
+`HEPHAESTUS_VERSION` in the Makefile pins the Hephaestus the `make` targets
+run, the same release as the action in the workflows.
 
 CI (`.github/workflows/ci.yml`) also installs the generated formula from
 the local archives with the real Homebrew on macOS and Linux
