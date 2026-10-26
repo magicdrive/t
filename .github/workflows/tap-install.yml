@@ -24,6 +24,7 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     env:
       HOMEBREW_NO_ANALYTICS: "1"
       HOMEBREW_NO_ENV_HINTS: "1"
@@ -35,10 +36,11 @@ jobs:
       - name: brew install magicdrive/tap/t
         run: |
           brew update --quiet
-          # brew install taps magicdrive/tap on its own; brew info does not.
-          brew tap magicdrive/tap
-          brew info magicdrive/tap/t
+          # As users install it: brew install taps magicdrive/tap and, from
+          # Homebrew 7.0.11, trusts the formula it installs (brew trust).
+          # brew info refuses a formula of an untrusted tap, so it comes after.
           brew install magicdrive/tap/t
+          brew info magicdrive/tap/t
       - name: brew test
         run: brew test magicdrive/tap/t
       - name: Installed files

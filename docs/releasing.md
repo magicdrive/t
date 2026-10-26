@@ -2,7 +2,8 @@
 
 Releases are published by `.github/workflows/release.yml` when a `v*` tag is
 pushed, with [Hephaestus](https://github.com/magicdrive/hephaestus)
-(`hephaestus.yaml`). Nothing is compiled: `t` is a Bash script, packaged as
+(`hephaestus.yaml`; the action pinned to the commit of v1.2.0, the same in
+`ci.yml` and `release.yml`). Nothing is compiled: `t` is a Bash script, packaged as
 it is in the repository.
 
 ## What a release contains
@@ -96,11 +97,14 @@ enforces it (`scripts/check-version.sh`; `make check-version TAG=...`).
    2. **build** (read-only, no secrets) — tag and man page version check,
       `archive,checksum` with Hephaestus, `scripts/verify-dist.sh`, upload
       `dist/`;
-   3. **release** (environment `release`) — verify `dist/` again; for a
-      stable tag, a read-only rehearsal of the tap pull request with the tap
-      token; provenance attestation; the GitHub release (draft, upload and
-      verify every asset, then publish, with generated notes); for a stable
-      tag, the formula and the tap pull request.
+   3. **release** (environment `release`) — verify `dist/` again; the
+      release plan (the action's `plan` command: the tap is `publish` for a
+      stable tag, `skip` for a prerelease, and a prerelease that would update
+      the tap is refused); when the plan publishes the tap, a read-only
+      rehearsal of the tap pull request with the tap token; provenance
+      attestation; the GitHub release (draft, upload and verify every asset,
+      then publish, with generated notes); when the plan publishes the tap,
+      the formula and the tap pull request.
 5. For a stable tag, review and merge the tap pull request.
 
 A failed run can be re-run: the release stays a draft until every asset is
@@ -109,6 +113,10 @@ move or delete a pushed tag; release the next version (e.g. `-rc.2`)
 instead.
 
 ## Verifying a release
+
+`make release-status TAG=v1.2.1` (`hephaestus publish status`, read-only)
+checks the published release: the release run, the assets, the checksums,
+every attestation, the tap steps and the formula pull request. By hand:
 
 ```sh
 gh release download v1.2.0 --repo magicdrive/t --dir rel && cd rel
@@ -128,6 +136,7 @@ make test                                  # help, completion, tmux sessions
 make snapshot HEPHAESTUS=/path/to/hephaestus   # archives into dist/
 make check-version TAG=v1.2.0
 make release-preflight TAG=v1.2.0-rc.1      # read-only; needs gh and jq
+make release-status TAG=v1.2.1             # read-only; a published release
 make test-release                          # release rules and workflow structure
 ```
 

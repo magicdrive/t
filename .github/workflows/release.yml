@@ -25,6 +25,7 @@ jobs:
     # No token that can write, no secrets: packages and verifies dist/.
     needs: [ci]
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -34,7 +35,7 @@ jobs:
       - name: Check the tag and the man page version
         run: scripts/check-version.sh "$GITHUB_REF_NAME"
       - name: Archive and checksum
-        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
         with:
           command: run
           stages: archive,checksum
@@ -53,6 +54,7 @@ jobs:
     # Publishes the verified dist/ from the build job; runs no build.
     needs: [ci, build]
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     environment: release
     permissions:
       contents: write     # create the release and upload assets
@@ -68,20 +70,28 @@ jobs:
           path: dist
       - name: Verify dist again before publishing anything
         run: scripts/verify-dist.sh dist "${GITHUB_REF_NAME#v}"
-      # Prereleases (v1.2.0-rc.1) never update the tap (skip_upload: auto),
-      # so the tap token reaches only stable releases' tap steps.
+      # Whether this release updates the tap: "publish" for a stable version,
+      # "skip" for a prerelease (v1.2.0-rc.1; skip_upload: auto). The action
+      # refuses a prerelease whose plan would update the tap. The tap token
+      # reaches only the steps that run when it is "publish".
+      - name: Plan the release
+        id: plan
+        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
+        with:
+          command: plan
       - name: Check the tap token
-        if: ${{ !contains(github.ref_name, '-') }}
+        if: steps.plan.outputs.tap == 'publish'
         env:
-          HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
+          # Whether the secret is set, never its value.
+          HAS_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN != '' }}
         run: |
           # Without a token a dry run cannot read the tap and would pass.
-          [[ -n "$HOMEBREW_TAP_GITHUB_TOKEN" ]] || { echo "::error::HOMEBREW_TAP_GITHUB_TOKEN is not set in the release environment"; exit 1; }
+          [[ "$HAS_TAP_TOKEN" == true ]] || { echo "::error::HOMEBREW_TAP_GITHUB_TOKEN is not set in the release environment"; exit 1; }
       - name: Rehearse the formula and tap pull request (read-only)
         # Checks the token, the tap's formula directory and the pull request
         # branch before the release becomes public.
-        if: ${{ !contains(github.ref_name, '-') }}
-        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+        if: steps.plan.outputs.tap == 'publish'
+        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
         with:
           command: run
           stages: formula,tap
@@ -95,12 +105,12 @@ jobs:
             dist/t_*.tar.gz
             dist/t_checksums.txt
       - name: Publish the GitHub release
-        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
         with:
           command: release
       - name: Generate the formula and open a tap pull request
-        if: ${{ !contains(github.ref_name, '-') }}
-        uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+        if: steps.plan.outputs.tap == 'publish'
+        uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
         with:
           command: run
           stages: formula,tap

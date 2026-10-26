@@ -22,6 +22,7 @@ jobs:
     # bash -n / zsh -n, ShellCheck (errors gate; see scripts/lint.sh) and
     # the man page.
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -50,6 +51,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -65,11 +67,12 @@ jobs:
   package:
     # The release archives, as release.yml builds them, without a tag.
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+      - uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
         with:
           command: run
           stages: archive,checksum
@@ -86,6 +89,7 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -93,7 +97,7 @@ jobs:
       - name: Put Homebrew on PATH (Linux)
         if: runner.os == 'Linux'
         run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
-      - uses: magicdrive/hephaestus@97ecf16a2a35d9833efb80a57b5c227807be8fff # v0.1.0
+      - uses: magicdrive/hephaestus@160990d32bbc83af702bde8a63f49ffcac32972c # v1.2.0
         with:
           command: run
           stages: archive,checksum,formula
@@ -107,6 +111,7 @@ jobs:
     if: always()
     needs: [lint, smoke, package, homebrew]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Every job succeeded
         env:

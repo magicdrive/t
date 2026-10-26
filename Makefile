@@ -2,7 +2,7 @@ PREFIX=${HOME}/local
 CURRENTDIR=$(shell pwd -L | perl -p -e 's/ /\\ /g')
 
 all:
-	@echo "make [install|uninstall|lint|test|test-release|snapshot|check-version TAG=vX.Y.Z|release-preflight TAG=vX.Y.Z]"
+	@echo "make [install|uninstall|lint|test|test-release|snapshot|check-version TAG=vX.Y.Z|release-preflight TAG=vX.Y.Z|release-status TAG=vX.Y.Z]"
 
 man:
 	[ -e $(shell which md2man-roff) ] && md2man-roff $(CURRENTDIR)/README.md > $(CURRENTDIR)/t.1
@@ -42,9 +42,17 @@ check-version:
 release-preflight:
 	scripts/release-preflight.sh $(TAG)
 
-# Tests of the release rules and of the release workflow's structure
+# Read-only verification of a published release with Hephaestus: assets,
+# checksums, attestations, the release run and the tap pull request
+# (hephaestus publish status): make release-status TAG=v1.2.1
+release-status:
+	$(HEPHAESTUS) publish status $(TAG)
+
+# Tests of the release rules and of the release workflow's structure (the
+# structure checks, and that they catch each way of weakening the release)
 test-release:
 	scripts/test-release-rules.sh
 	ruby scripts/check-workflows.rb
+	scripts/test-check-workflows.sh
 
-.PHONY: all man install uninstall lint test snapshot check-version release-preflight test-release
+.PHONY: all man install uninstall lint test snapshot check-version release-preflight release-status test-release
