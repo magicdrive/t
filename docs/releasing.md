@@ -34,7 +34,7 @@ prereleases and never touch the tap; the tap token is not passed to them.
 | Ruleset on `master` | Active: pull request required, `ci-gate` required, no force pushes, no deletion — [settings/ruleset-protect-master.json](settings/ruleset-protect-master.json) |
 | Ruleset on tags `v*` | Active: no update, no deletion; creation allowed — [settings/ruleset-protect-release-tags.json](settings/ruleset-protect-release-tags.json) |
 
-`make release-preflight TAG=...` checks every row it can read (secret names
+`make publish-check vX.Y.Z` checks every row it can read (secret names
 only, never values).
 
 Changing the environment policy in the UI: Settings → Environments →
@@ -89,10 +89,9 @@ enforces it (`scripts/check-version.sh`; `make check-version TAG=...`).
    deletion, creation allowed) and require `ci-gate` on `master`; no release
    or draft exists for the tag; for a stable tag also the tap token secret
    (by name), the tap's layout and that no `t-X.Y.Z` branch or pull request
-   exists yet; and `hephaestus preflight --strict`.
-   `make release-preflight TAG=v1.2.0-rc.1` runs this repository's own,
-   equivalent checks, and also that the tag is newer than the latest
-   release.
+   exists yet; and `hephaestus preflight --strict`, which also requires the
+   tag to be newer than the latest released `vX.Y.Z` (`tag.order`). Each
+   check prints `ok` or `FAIL`; a failure stops before anything is tagged.
 3. Tag and push (the only release trigger; a pushed tag is never moved or
    deleted):
 
@@ -160,7 +159,6 @@ make check-version TAG=v1.2.0
 make publish-check v1.2.0-rc.1             # read-only: man page check + publish preflight
 make publish v1.2.0-rc.1                   # the release (tag push), then follow and verify
 make publish-status v1.2.1                 # read-only; a published release
-make release-preflight TAG=v1.2.0-rc.1      # read-only; needs gh and jq
 make test-release                          # release rules, workflow structure, make publish wiring
 ```
 
