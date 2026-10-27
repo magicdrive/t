@@ -56,7 +56,9 @@ jobs:
           # t --help prints the usage and exits 1 by design.
           set +e; out="$("$p/bin/t" --help 2>&1)"; code=$?; set -e
           echo "t --help exit $code"
-          [[ $code -eq 1 ]] && grep -q '^USAGE:' <<<"$out"
+          # Two statements: in `a && b`, set -e ignores a failing a.
+          [[ $code -eq 1 ]] || { echo "::error::t --help exited $code, want 1"; exit 1; }
+          grep -q '^USAGE:' <<<"$out" || { echo "::error::t --help printed no USAGE:"; exit 1; }
           bash -c "source '$p/etc/bash_completion.d/t' && complete -p t" | grep -q _t_complete
           # The installed files are the released ones.
           version="$(brew list --versions t | awk '{print $2}')"
