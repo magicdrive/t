@@ -52,12 +52,14 @@ release-status:
 	$(HEPHAESTUS) publish status $(TAG)
 
 # Tests of the release rules and of the release workflow's structure (the
-# structure checks, and that they catch each way of weakening the release)
+# structure checks, and that they catch each way of weakening the release;
+# test-tap-install.sh: the tap install workflow fails when a check fails)
 test-release:
 	scripts/test-release-rules.sh
 	ruby scripts/check-workflows.rb
 	scripts/test-check-workflows.sh
 	scripts/test-publish-make.sh
+	scripts/test-tap-install.sh
 
 .PHONY: all man install uninstall lint test snapshot check-version release-status test-release
 
