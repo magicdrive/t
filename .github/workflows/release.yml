@@ -25,7 +25,9 @@ jobs:
   # maintenance branch, add its exact name after master.
   provenance:
     needs: [ci]
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moves to 26.04 in November 2026 (actions/runner-images#14748);
+    # the release path changes its image only through a reviewed pull request.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -47,7 +49,9 @@ jobs:
   build:
     # No token that can write, no secrets: packages and verifies dist/.
     needs: [ci, provenance]
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moves to 26.04 in November 2026 (actions/runner-images#14748);
+    # the release path changes its image only through a reviewed pull request.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
       contents: read
@@ -76,7 +80,9 @@ jobs:
   release:
     # Publishes the verified dist/ from the build job; runs no build.
     needs: [provenance, ci, build]
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moves to 26.04 in November 2026 (actions/runner-images#14748);
+    # the release path changes its image only through a reviewed pull request.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: release
     permissions:
