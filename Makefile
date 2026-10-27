@@ -2,7 +2,7 @@ PREFIX=${HOME}/local
 CURRENTDIR=$(shell pwd -L | perl -p -e 's/ /\\ /g')
 
 all:
-	@echo "make [install|uninstall|lint|test|test-release|snapshot|check-version TAG=vX.Y.Z|release-preflight TAG=vX.Y.Z|release-status TAG=vX.Y.Z]"
+	@echo "make [install|uninstall|lint|test|test-release|snapshot|check-version TAG=vX.Y.Z|release-status TAG=vX.Y.Z]"
 	@echo "make publish vX.Y.Z         release: man page check, preflight, confirm, tag, push, follow, verify"
 	@echo "make publish-check vX.Y.Z   man page check + release preflight only (read-only)"
 	@echo "make publish-status vX.Y.Z  what exists for a version (read-only)"
@@ -45,11 +45,6 @@ snapshot:
 check-version:
 	scripts/check-version.sh $(TAG)
 
-# Read-only checks before pushing a release tag (git, CI, environment,
-# rulesets, man page, tap): make release-preflight TAG=v1.2.0-rc.1
-release-preflight:
-	scripts/release-preflight.sh $(TAG)
-
 # Read-only verification of a published release with Hephaestus: assets,
 # checksums, attestations, the release run and the tap pull request
 # (hephaestus publish status): make release-status TAG=v1.2.1
@@ -64,7 +59,7 @@ test-release:
 	scripts/test-check-workflows.sh
 	scripts/test-publish-make.sh
 
-.PHONY: all man install uninstall lint test snapshot check-version release-preflight release-status test-release
+.PHONY: all man install uninstall lint test snapshot check-version release-status test-release
 
 # ---------------------------------------------------------------------------
 # Release with Hephaestus (its docs/publish.md; docs/releasing.md here):
